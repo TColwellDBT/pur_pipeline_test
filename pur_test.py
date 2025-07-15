@@ -45,6 +45,7 @@ data['month'] = data['perref'].str.slice(4,6)
 data['year'] = data['perref'].str.slice(0,4)
 data.head(10)
 
+# Step 3: Clean and process the data
 # comcode clean
 # some comcodes have their leading '0' removed due to csv formatting. These need adding on to string length 7 (all digits should be 8 lenght)
 
@@ -84,6 +85,30 @@ data2['eligibility_pref'] = np.where((data2['eligibility'].isin(['e2','e3','e5']
 data2['use_pref'] = np.where((data2['use'].isin(['u20','u21','u30','u31'])) & (data2['statreg'] == 1), data2['statvalue'], 0)
 
 data2
+
+# Step 4: Match metadata from following sources:
+
+# need to connect to DW datasets to match in for pipeline 
+
+import pandas
+import psycopg2
+import sqlalchemy
+
+engine = sqlalchemy.create_engine('postgresql://', execution_options={"stream_results": True})
+chunks = pandas.read_sql(sqlalchemy.text("""SELECT * FROM \"hmrc\".\"country_list\" """), engine, chunksize=10000)
+for chunk in chunks:
+    display(chunk)
+
+# second SQL dataset
+
+
+engine = sqlalchemy.create_engine('postgresql://', execution_options={"stream_results": True})
+chunks = pandas.read_sql(sqlalchemy.text("""SELECT * FROM \"hmrc\".\"comcode_descriptions\" """), engine, chunksize=10000)
+for chunk in chunks:
+    display(chunk)
+ 
+
+# Step 5: Save the processed data to a CSV file
 
 data_csv = data2.head(1000)
 data_csv.to_csv("trade_data_processed_py.csv", index=False)
